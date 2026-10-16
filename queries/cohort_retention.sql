@@ -1,8 +1,9 @@
 -- Monthly cohort retention: group customers by their signup month, then for
 -- each subsequent month measure what % of that cohort placed at least one
--- order. This is the classic "cohort table" growth teams live in.
+-- order. Zero-activity months are included through the latest signup/order month.
+-- This is the classic "cohort table" growth teams live in.
 
-WITH cohort AS (
+WITH RECURSIVE cohort AS (
     SELECT
         id AS customer_id,
         strftime('%Y-%m', signup_date) AS cohort_month
@@ -37,13 +38,28 @@ retained AS (
     FROM cohort_activity
     WHERE period_number >= 0
     GROUP BY cohort_month, period_number
+),
+observation_end AS (
+    SELECT MAX(month) AS last_month FROM (
+        SELECT cohort_month AS month FROM cohort
+        UNION ALL
+        SELECT order_month FROM order_activity
+    )
+),
+cohort_periods(cohort_month, period_number, period_month) AS (
+    SELECT cohort_month, 0, cohort_month || '-01' FROM cohort_sizes
+    UNION ALL
+    SELECT cohort_month, period_number + 1, date(period_month, '+1 month')
+    FROM cohort_periods
+    WHERE strftime('%Y-%m', period_month) < (SELECT last_month FROM observation_end)
 )
 SELECT
-    r.cohort_month,
+    p.cohort_month,
     s.cohort_size,
-    r.period_number,
-    r.active_customers,
-    ROUND(100.0 * r.active_customers / s.cohort_size, 1) AS retention_pct
-FROM retained r
-JOIN cohort_sizes s ON s.cohort_month = r.cohort_month
-ORDER BY r.cohort_month, r.period_number;
+    p.period_number,
+    COALESCE(r.active_customers, 0) AS active_customers,
+    ROUND(100.0 * COALESCE(r.active_customers, 0) / s.cohort_size, 1) AS retention_pct
+FROM cohort_periods p
+JOIN cohort_sizes s ON s.cohort_month = p.cohort_month
+LEFT JOIN retained r ON r.cohort_month = p.cohort_month AND r.period_number = p.period_number
+ORDER BY p.cohort_month, p.period_number;
