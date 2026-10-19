@@ -14,6 +14,8 @@ order_activity AS (
         o.customer_id,
         strftime('%Y-%m', o.order_date) AS order_month
     FROM orders o
+    JOIN customers c ON c.id = o.customer_id
+    WHERE o.order_date >= c.signup_date
 ),
 cohort_activity AS (
     SELECT
@@ -63,3 +65,4 @@ FROM cohort_periods p
 JOIN cohort_sizes s ON s.cohort_month = p.cohort_month
 LEFT JOIN retained r ON r.cohort_month = p.cohort_month AND r.period_number = p.period_number
 ORDER BY p.cohort_month, p.period_number;
+
