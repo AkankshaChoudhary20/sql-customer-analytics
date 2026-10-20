@@ -2,7 +2,10 @@
 -- Useful as the headline number for a marketing/growth team.
 
 WITH as_of AS (
-    SELECT MAX(order_date) AS as_of_date FROM orders
+    SELECT MAX(o.order_date) AS as_of_date
+    FROM orders o
+    JOIN customers c ON c.id = o.customer_id
+    WHERE o.order_date >= c.signup_date
 ),
 customer_orders AS (
     SELECT
@@ -11,7 +14,7 @@ customer_orders AS (
         COUNT(o.id) AS frequency,
         SUM(o.amount) AS monetary
     FROM customers c
-    JOIN orders o ON o.customer_id = c.id
+    JOIN orders o ON o.customer_id = c.id AND o.order_date >= c.signup_date
     GROUP BY c.id
 ),
 scored AS (
@@ -46,3 +49,4 @@ SELECT
 FROM segmented
 GROUP BY segment
 ORDER BY total_revenue DESC;
+
