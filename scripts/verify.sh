@@ -27,14 +27,14 @@ check "f_score always 1-5" \
   "SELECT COUNT(*) FROM ($(cat queries/rfm_segmentation.sql | sed 's/;$//')) WHERE f_score NOT BETWEEN 1 AND 5" \
   "0"
 
-# Every customer with at least one order must appear exactly once in the RFM output.
+# Match the valid-order population used by the queries (exclude orphan and pre-signup orders).
 check "RFM row count matches customers-with-orders" \
-  "SELECT (SELECT COUNT(*) FROM ($(cat queries/rfm_segmentation.sql | sed 's/;$//'))) - (SELECT COUNT(DISTINCT customer_id) FROM orders)" \
+  "SELECT (SELECT COUNT(*) FROM ($(cat queries/rfm_segmentation.sql | sed 's/;$//'))) - (SELECT COUNT(DISTINCT o.customer_id) FROM orders o JOIN customers c ON c.id = o.customer_id WHERE o.order_date >= c.signup_date)" \
   "0"
 
 # Segment summary customer counts must sum to the same total.
 check "segment summary customers sum to customers-with-orders" \
-  "SELECT (SELECT SUM(customers) FROM ($(cat queries/rfm_segment_summary.sql | sed 's/;$//'))) - (SELECT COUNT(DISTINCT customer_id) FROM orders)" \
+  "SELECT (SELECT COALESCE(SUM(customers), 0) FROM ($(cat queries/rfm_segment_summary.sql | sed 's/;$//'))) - (SELECT COUNT(DISTINCT o.customer_id) FROM orders o JOIN customers c ON c.id = o.customer_id WHERE o.order_date >= c.signup_date)" \
   "0"
 
 # Retention percentages must never exceed 100 or drop below 0.
