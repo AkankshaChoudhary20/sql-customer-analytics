@@ -7,6 +7,7 @@ ordering in later months -- so cohort retention curves look like real ones
 """
 import calendar
 import random
+from pathlib import Path
 from datetime import date, timedelta
 
 random.seed(42)
@@ -62,7 +63,8 @@ for (year, month) in COHORT_MONTHS:
 
         customer_id += 1
 
-with open("schema/seed.sql", "w") as f:
+seed_path = Path(__file__).resolve().parents[1] / "schema" / "seed.sql"
+with seed_path.open("w", encoding="utf-8") as f:
     f.write("BEGIN TRANSACTION;\n")
     for c in customers:
         f.write(
