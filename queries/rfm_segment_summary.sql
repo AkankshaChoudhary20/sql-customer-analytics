@@ -21,9 +21,9 @@ scored AS (
     SELECT
         customer_id,
         monetary,
-        6 - NTILE(5) OVER (ORDER BY recency_days) AS r_score,
-        NTILE(5) OVER (ORDER BY frequency)        AS f_score,
-        NTILE(5) OVER (ORDER BY monetary)         AS m_score
+        6 - NTILE(5) OVER (ORDER BY recency_days, customer_id) AS r_score,
+        NTILE(5) OVER (ORDER BY frequency, customer_id)        AS f_score,
+        NTILE(5) OVER (ORDER BY monetary, customer_id)         AS m_score
     FROM customer_orders
 ),
 segmented AS (
