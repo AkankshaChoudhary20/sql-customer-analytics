@@ -11,7 +11,7 @@ echo "=== RFM segment summary ==="
 sqlite3 -header -column analytics.db < queries/rfm_segment_summary.sql
 echo
 echo "=== RFM detail (first 15 rows) ==="
-sqlite3 -header -column analytics.db < queries/rfm_segmentation.sql | head -16
+sqlite3 -header -column analytics.db < queries/rfm_segmentation.sql | sed -n '1,16p'
 echo
 echo "=== Cohort retention (first 20 rows) ==="
-sqlite3 -header -column analytics.db < queries/cohort_retention.sql | head -21
+sqlite3 -header -column analytics.db < queries/cohort_retention.sql | sed -n '1,21p'
