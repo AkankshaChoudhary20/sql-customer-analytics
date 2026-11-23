@@ -3,9 +3,11 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-rm -f analytics.db
-sqlite3 analytics.db < schema/schema.sql
-sqlite3 analytics.db < schema/seed.sql
+db_temp=$(mktemp ./analytics.db.XXXXXX)
+trap 'rm -f "$db_temp"' EXIT
+sqlite3 -bail "$db_temp" < schema/schema.sql
+sqlite3 -bail "$db_temp" < schema/seed.sql
+mv -f "$db_temp" analytics.db
 
 echo "=== RFM segment summary ==="
 sqlite3 -header -column analytics.db < queries/rfm_segment_summary.sql
